@@ -29,8 +29,6 @@ program
 program
   .command('translate')
   .description('执行翻译')
-  .option('--adapter <adapter>', '指定适配器')
-  .option('--config <config>', '指定配置文件路径')
   .action(async (opts) => (await import('../lib/core/translate.js')).default(opts));
 
 program.parse(process.argv);
