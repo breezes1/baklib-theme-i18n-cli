@@ -8,7 +8,7 @@ program
 
 program
   .command('init')
-  .description('初始化配置和默认适配器')
+  .description('初始化配置')
   .action(async () => (await import('../lib/core/init.js')).default());
 
 program
