@@ -1,0 +1,46 @@
+{
+  "name": "baklib-theme-i18n-cli",
+  "version": "1.0.0",
+  "description": "Baklib 模版多语言翻译 CLI 工具",
+  "main": "bin/baklib_theme_i18n.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "bin": {
+    "baklib_theme_i18n": "bin/baklib_theme_i18n.js"
+  },
+  "scripts": {
+    "test": "node --import mock-import/register --test"
+  },
+  "keywords": [
+    "i18n",
+    "cli",
+    "baklib",
+    "theme"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/breezes1/baklib-theme-i18n-cli.git"
+  },
+  "files": [
+    "bin/",
+    "config/",
+    "lib/",
+    "templates/",
+    "index.js"
+  ],
+  "author": "cheng",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "commander": "^14.0.0",
+    "fs-extra": "^11.3.0",
+    "inquirer": "^12.7.0",
+    "limiter": "^3.0.0",
+    "lowdb": "^7.0.1",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "mock-import": "^4.2.1"
+  }
+}
