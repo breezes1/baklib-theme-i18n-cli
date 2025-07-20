@@ -43,25 +43,53 @@
 
 ### 1. 支持语言
 
-支持语言需与系统定义一致：
-
-```ruby
-Baklib::Application.config.global_locales
-```
-
-包括：
+支持语言需与系统定义一致,包括：
 
 ```json
 {
   "zh-CN": "简体中文",
   "zh-TW": "繁體中文",
+  "zh-HK": "繁體中文",
+  "zh-MO": "繁體中文",
+  "zh-SG": "简体中文",
   "en": "English",
+  "en-US": "English (US)",
+  "en-GB": "English (UK)",
+  "en-AU": "English (Australia)",
+  "en-CA": "English (Canada)",
+  "en-NZ": "English (New Zealand)",
+  "en-IE": "English (Ireland)",
+  "pt": "Português",
+  "pt-BR": "Português (Brasil)",
+  "pt-PT": "Português (Portugal)",
+  "es": "Español",
+  "es-ES": "Español (España)",
+  "es-MX": "Español (México)",
+  "es-AR": "Español (Argentina)",
   "fr": "Français",
-  ...
+  "fr-FR": "Français (France)",
+  "fr-CA": "Français (Canada)",
+  "fr-BE": "Français (Belgique)",
+  "fr-CH": "Français (Suisse)",
+  "de": "Deutsch",
+  "de-DE": "Deutsch (Deutschland)",
+  "de-AT": "Deutsch (Österreich)",
+  "de-CH": "Deutsch (Schweiz)",
+  "ja": "日本語",
+  "ko": "한국어",
+  "vi": "Tiếng Việt",
+  "th": "ไทย",
+  "id": "Bahasa Indonesia",
+  "ms": "Bahasa Melayu",
+  "ar": "العربية",
+  "hi": "हिन्दी",
+  "bn": "বাংলা",
+  "ru": "Русский",
+  "tr": "Türkçe"
 }
 ```
 
-### 2. 当前模版语言来源
+### 2. 模版配置的语言列表
 
 语言列表来源于 `config/settings_schema.json` 文件中的：
 
