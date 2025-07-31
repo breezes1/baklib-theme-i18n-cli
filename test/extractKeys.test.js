@@ -74,6 +74,7 @@ test('extractTKeys: 正确提取 t key', () => {
     {{ 'b' | t: 'x' }}
     {{ 'c' | b | t: 'x' }}
     {{ 'd' | t }}
+    {% assign empty_title = 'generic.empty.title' | t: '没有找到相关内容' %}
   `;
   const data = extractTKeys(content);
   const result = {
@@ -81,7 +82,8 @@ test('extractTKeys: 正确提取 t key', () => {
     "welcome": 123.2,
     "welcome1": 66,
     "b": 'x',
-    "d": ''
+    "d": '',
+    "generic.empty.title": '没有找到相关内容'
   }
   assert(JSON.stringify(data) === JSON.stringify(result));
 });
