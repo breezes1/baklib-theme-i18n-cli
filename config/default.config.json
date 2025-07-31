@@ -11,6 +11,6 @@
   "paths": {
     "locales": "locales",
     "schema": "config/settings_schema.json",
-    "source": ["templates", "layout", "snippets", "statics"]
+    "source": ["config", "templates", "layout", "snippets", "statics"]
   }
 }
