@@ -23,8 +23,12 @@ program
 
 program
   .command('extract-keys')
-  .description('提取所有 key 并生成 locales 文件')
-  .action(async () => (await import('../lib/core/extractKeys.js')).default());
+  .description('提取所有 key 并生成 locales 文件\n  --clean-unused    清理 locales 文件中未被源码引用的翻译 key')
+  .option('--clean-unused', '清理 locales 文件中未被源码引用的翻译 key')
+  .action(async (opts) => {
+    const extractKeys = (await import('../lib/core/extractKeys.js')).default;
+    await extractKeys({ cleanUnused: opts.cleanUnused });
+  });
 
 program
   .command('translate')
