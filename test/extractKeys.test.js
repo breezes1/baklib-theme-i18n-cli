@@ -117,7 +117,7 @@ test('extractKeysFromContent: 综合提取', () => {
       }
     {% endschema %}
   `;
-  const data = extractKeysFromContent(content);
+  const data = extractKeysFromContent(content, 'xx.liquid');
   console.log('data', data)
   const result = {
     "hello": '',
