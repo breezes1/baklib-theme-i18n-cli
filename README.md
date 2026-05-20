@@ -4,7 +4,8 @@
 
 ## 功能特性
 
-- 🔍 **智能键提取**: 从 Liquid 模板中提取 `{{ "key" | t }}` 和 `{{ "key" | t: "default" }}` 格式的翻译键
+- 🔍 **智能键提取**: 从 Liquid 模板提取 `t` filter 翻译键（含 `| t`、`| t: default`、`| t, url: ...` 及相对 key `.hello`）
+- 🧹 **清理未使用 key**: `extract-keys --clean-unused` 移除 locales 中未被源码引用的条目
 - 📋 **Schema 支持**: 从 `{% schema %}` 区块中提取 `t:key` 格式的翻译键
 - 🌍 **多语言生成**: 自动生成嵌套结构的 JSON 语言文件
 - 🔧 **适配器系统**: 支持自定义翻译适配器，可扩展不同的翻译服务
@@ -145,6 +146,12 @@ npx baklib-theme-i18n-cli extract-keys
 
 从模板文件中提取所有翻译键并生成语言文件。
 
+清理 locales 中未被源码引用的 key（请确认 locales 已提交版本控制后再执行）：
+
+```bash
+npx baklib-theme-i18n-cli extract-keys --clean-unused
+```
+
 ### 5. 执行翻译
 ```bash
 npx baklib-theme-i18n-cli translate
@@ -249,13 +256,47 @@ export default MyCustomAdapter;
 
 ## 支持的翻译键格式
 
+提取规则与 Baklib ThemeEngine 的 `t` filter（`localization_filter.rb`）保持一致。
+
 ### Liquid 模板
 
 ```liquid
+{# 仅 key，无默认值 #}
 {{ "hello" | t }}
+
+{# 带默认翻译 #}
 {{ "welcome" | t: "Welcome" }}
-{{ "user.name" | t: "User Name" }}
+
+{# 命名参数（如 url、locale），无位置默认值 #}
+{{ "templates.page.llm_prompt_template" | t, url: page.markdown_url }}
+
+{# 默认翻译 + 命名参数 #}
+{{ "templates.page.llm_prompt_template" | t: "Read from %{url}", url: page.markdown_url }}
+
+{# 默认翻译 + 位置占位符参数 #}
+{{ "layout.theme.hello" | t: "hello: %s", "张三" }}
+
+{# 指定语言 #}
+{{ "hello" | t: "你好", locale: "de" }}
+
+{# 相对 key：按当前模板文件路径展开（与运行时 i18n_scope 一致） #}
+{# templates/page.liquid 中 .llm_prompt_template -> templates.page.llm_prompt_template #}
+{{ ".llm_prompt_template" | t, url: page.markdown_url }}
+
+{# assign 语句 #}
+{% assign title = "generic.empty.title" | t: "没有找到相关内容" %}
+
+{# HTML 属性内的 output 标签同样支持 #}
+<div data-prompt="{{ 'templates.page.llm_prompt_template' | t, url: page.markdown_url }}"></div>
 ```
+
+**相对 key 与文件路径对应关系**
+
+| 模板文件 | `i18n_scope` | `{{ '.foo' | t }}` 展开为 |
+| -------- | ------------ | ------------------------- |
+| `templates/page.liquid` | `templates.page` | `templates.page.foo` |
+| `layout/theme.liquid` | `layout.theme` | `layout.theme.foo` |
+| `snippets/_header.liquid` | `snippets.header` | `snippets.header.foo` |
 
 ### Schema 区块
 
@@ -320,6 +361,83 @@ yarn install
 
 ```bash
 yarn test
+```
+
+### 在主题项目中使用本地 CLI（联调）
+
+开发本仓库时，通常需要在**某个 Baklib 主题项目**里验证 `extract-keys`、`translate` 等命令。请在**主题项目根目录**执行 CLI（工具会读取该目录下的 `.baklib_theme_i18nrc.json`）。
+
+以下任选一种方式，将依赖指向本机 `baklib-theme-i18n-cli` 源码目录。
+
+#### 方式一：`package.json` 本地路径（推荐）
+
+在主题项目的 `package.json` 中：
+
+```json
+{
+  "devDependencies": {
+    "baklib-theme-i18n-cli": "file:../baklib-theme-i18n-cli"
+  },
+  "scripts": {
+    "i18n:extract": "baklib_theme_i18n extract-keys",
+    "i18n:extract:clean": "baklib_theme_i18n extract-keys --clean-unused",
+    "i18n:translate": "baklib_theme_i18n translate"
+  }
+}
+```
+
+`../baklib-theme-i18n-cli` 请按实际相对路径调整。安装依赖后：
+
+```bash
+cd /path/to/your-theme
+yarn install          # 或 npm install
+yarn i18n:extract     # 使用本地链接的 CLI
+```
+
+修改 CLI 源码后，在主题项目中重新执行命令即可生效（`file:` 协议会指向当前目录，无需重新 publish）。
+
+#### 方式二：`npm link` / `yarn link`
+
+```bash
+# 1. 在 CLI 仓库根目录注册全局 link
+cd /path/to/baklib-theme-i18n-cli
+yarn link               # 或 npm link
+
+# 2. 在主题项目中链接
+cd /path/to/your-theme
+yarn link baklib-theme-i18n-cli   # 或 npm link baklib-theme-i18n-cli
+
+# 3. 在主题项目根目录执行
+npx baklib-theme-i18n-cli extract-keys
+```
+
+取消链接：`yarn unlink baklib-theme-i18n-cli`（主题项目）/ `yarn unlink`（CLI 仓库）。
+
+#### 方式三：直接调用 bin（不改 package.json）
+
+适合临时跑一次，主题项目无需安装依赖：
+
+```bash
+cd /path/to/your-theme
+
+# 使用 node 执行本地 bin
+node /path/to/baklib-theme-i18n-cli/bin/baklib_theme_i18n.js extract-keys
+
+# 或使用 npx 指向本地目录
+npx --prefix /path/to/baklib-theme-i18n-cli baklib-theme-i18n-cli extract-keys --clean-unused
+```
+
+#### 联调检查清单
+
+1. 主题项目已执行 `baklib-theme-i18n-cli init`，存在 `.baklib_theme_i18nrc.json`
+2. `paths.source` 包含实际模板目录（如 `templates`、`layout`、`snippets`）
+3. 命令在主题项目根目录执行（`process.cwd()` 为配置与 locales 的基准路径）
+4. 修改 CLI 后跑 `yarn test`；再在主题项目中执行 `extract-keys` 验证
+
+### 发布
+
+```bash
+npm publish
 ```
 
 ## 许可证

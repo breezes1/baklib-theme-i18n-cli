@@ -4,7 +4,7 @@ import { program } from 'commander';
 program
   .name('baklib_theme_i18n')
   .description('Baklib 模版多语言翻译 CLI 工具')
-  .version('1.0.0');
+  .version('1.0.5');
 
 program
   .command('init')

@@ -45,24 +45,22 @@ const fsMock = {
 fsMock.writeJson.calls = [];
 
 mockImport('fs-extra', fsMock);
-let extractKeys, extractTKeys, extractSchemaTKeys, extractKeysFromContent, walk;
+let extractKeys, extractTKeys, extractSchemaTKeys, extractKeysFromContent;
+let i18nScopeFromFile, resolveI18nKey, walk;
 test.before(async () => {
   const mod = await reImport('../lib/core/extractKeys.js');
   extractKeys = mod.default;
   extractTKeys = mod.extractTKeys;
   extractSchemaTKeys = mod.extractSchemaTKeys;
   extractKeysFromContent = mod.extractKeysFromContent;
+  i18nScopeFromFile = mod.i18nScopeFromFile;
+  resolveI18nKey = mod.resolveI18nKey;
   walk = mod.walk;
 });
 
 test('应生成多语言 key 文件', async () => {
   await assert.doesNotReject(() => extractKeys());
-  // console.log('writeJson calls:', fsMock.writeJson.calls);
   assert(fsMock.writeJson.calls.some(call => call[0].includes('zh-CN.json')));
-  // assert(fsMock.writeJson.calls.some(call => call[0].includes('en.json')));
-  // 如果有 schema 键，还会生成 schema 文件
-  // assert(fsMock.writeJson.calls.some(call => call[0].includes('zh-CN.schema.json')));
-  // assert(fsMock.writeJson.calls.some(call => call[0].includes('en.schema.json')));
 });
 
 test('extractTKeys: 正确提取 t key', () => {
@@ -75,6 +73,7 @@ test('extractTKeys: 正确提取 t key', () => {
     {{ 'c' | b | t: 'x' }}
     {{ 'd' | t }}
     {% assign empty_title = 'generic.empty.title' | t: '没有找到相关内容' %}
+    {{ 'templates.page.llm_prompt_template' | t, url: page.markdown_url }}
   `;
   const data = extractTKeys(content);
   const result = {
@@ -83,9 +82,47 @@ test('extractTKeys: 正确提取 t key', () => {
     "welcome1": 66,
     "b": 'x',
     "d": '',
-    "generic.empty.title": '没有找到相关内容'
+    "generic.empty.title": '没有找到相关内容',
+    "templates.page.llm_prompt_template": ''
   }
-  assert(JSON.stringify(data) === JSON.stringify(result));
+  assert.deepEqual(data, result);
+});
+
+test('extractTKeys: HTML 属性内的 | t, 命名参数', () => {
+  const content = `data-page-tools-llm-prompt-value="{{ 'templates.page.llm_prompt_template' | t, url: page.markdown_url }}"`;
+  const data = extractTKeys(content);
+  assert.deepEqual(data, { 'templates.page.llm_prompt_template': '' });
+});
+
+test('extractTKeys: | t: 默认值后跟命名参数', () => {
+  const content = `{{ 'templates.page.llm_prompt_template' | t: 'Read from %{url}', url: page.markdown_url }}`;
+  const data = extractTKeys(content);
+  assert.deepEqual(data, {
+    'templates.page.llm_prompt_template': 'Read from %{url}',
+  });
+});
+
+test('extractTKeys: 相对 key 按模板路径展开', () => {
+  const file = 'templates/page.liquid';
+  const content = `{{ '.llm_prompt_template' | t, url: page.markdown_url }}`;
+  const data = extractTKeys(content, file);
+  assert.deepEqual(data, { 'templates.page.llm_prompt_template': '' });
+});
+
+test('i18nScopeFromFile / resolveI18nKey: 与 ThemeEngine i18n_scope 一致', () => {
+  assert.equal(i18nScopeFromFile('templates/page.liquid'), 'templates.page');
+  assert.equal(i18nScopeFromFile('layout/theme.liquid'), 'layout.theme');
+  assert.equal(i18nScopeFromFile('snippets/_header.liquid'), 'snippets.header');
+  assert.equal(
+    resolveI18nKey('.hello', 'templates/index.liquid'),
+    'templates.index.hello'
+  );
+});
+
+test('extractKeysFromContent: 相对 key 在 page 模板中保留完整路径', () => {
+  const content = `{{ '.llm_prompt_template' | t, url: page.markdown_url }}`;
+  const data = extractKeysFromContent(content, 'templates/page.liquid');
+  assert.deepEqual(data, { 'templates.page.llm_prompt_template': '' });
 });
 
 test('extractSchemaTKeys: 正确提取 schema key', () => {
@@ -118,7 +155,6 @@ test('extractKeysFromContent: 综合提取', () => {
     {% endschema %}
   `;
   const data = extractKeysFromContent(content, 'xx.liquid');
-  console.log('data', data)
   const result = {
     "hello": '',
     "s1.x": 'a',
